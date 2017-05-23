@@ -66,6 +66,14 @@ def main(options={}):
     print np.array(map(lambda x: dictum_vocab.map_symbol_to_vec(x, mode="tf"), sequences))
     print np.array(map(dictum_vocab.map_symbol_to_vec, sequences))
 
+    print "test. 3"
+    x_npa = np.array([[[4, 10, 2], [3, 10, 2]], [[5, 1, ]])
+    print x_npa.shape
+    dictum_img = Dictum(use_unknown=True)
+    print x_npa
+    dictum_img.push_img(x_npa)
+    print dictum_img.img_tf(x_npa)
+    print dictum_img.dictum
 
 if __name__ == "__main__":
     options = def_args()

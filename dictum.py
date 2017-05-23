@@ -23,7 +23,8 @@ class Dictum(object):
         self.dictum = {}
         self.term = Counter()
         self.idf_m = Counter()
-        self.doc_amount = 0.0
+        self.pixel_amount = Counter()
+        self.sample_amount = 0.0
         self.inv_dictum = {}
         self.is_locked = False
         self.unknown_symbol = "<u>"
@@ -45,6 +46,24 @@ class Dictum(object):
 
         self.term[symbol] += 1
 
+    def push_img(self, img):
+        if self.is_locked == True:
+            return
+
+        (channel, column, row) = img.shape
+        item_set = set()
+
+        for ch in range(channel):
+            for co in range(column):
+                for ro in range(row):
+                    key = (ch, img[ch, co, ro])
+                    self.push(key)
+                    item_set.add(key)
+
+        for i in item_set:
+            self.idf_m[i] += 1
+            self.pixel_amount[i] += 1
+
     def push_list(self, symbol_list):
         if self.is_locked == True:
             return
@@ -54,7 +73,7 @@ class Dictum(object):
         for symbol in set(symbol_list):
             self.idf_m[symbol] += 1
 
-        self.doc_amount += 1
+        self.sample_amount += 1
 
         return
 
@@ -93,9 +112,38 @@ class Dictum(object):
         if self.idf_m[symbol] == 0:
             idf = 0.0
         else:
-            idf = np.log(self.doc_amount / self.idf_m[symbol])
+            idf = np.log(self.sample_amount / self.idf_m[symbol])
 
         return (self.symbol_to_id(symbol), idf)
+
+    def img_tf(self, img):
+        ret_vec = np.zeros(self.size())
+        (channel, column, row) = img.shape
+        sigma_m = channel * column * row
+
+        for ch in range(channel):
+            for co in range(column):
+                for ro in range(row):
+                    key = (ch, img[ch, co, ro])
+                    ret_vec[self.symbol_to_id(key)] += 1
+
+        return ret_vec / sigma_m
+
+    def img_idf(self, img):
+        ret_vec = np.zeros(self.size())
+        (channel, column, row) = img.shape
+
+        for ch in range(channel):
+            for co in range(column):
+                for ro in range(row):
+                    key = (ch, img[ch, co, ro])
+                    (_id, idf) = self.symbol_to_idf(key)
+                    ret_vec[_id] = idf
+
+        return ret_vec
+
+    def img_tfidf(self, img):
+        return self.img_tf(img) * self.img_idf(img)
 
     def size(self):
         return len(self.dictum)

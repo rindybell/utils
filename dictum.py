@@ -16,7 +16,7 @@ class Dictum(object):
     classdocs
     '''
 
-    def __init__(self, use_unknown=False, use_pad_symbol=False):
+    def __init__(self, use_unknown=False, use_pad_symbol=False, pad_style="right"):
         '''
         Constructor
         '''
@@ -27,16 +27,18 @@ class Dictum(object):
         self.sample_amount = 0.0
         self.inv_dictum = {}
         self.is_locked = False
+        self.use_unknown = use_unknown
         self.unknown_symbol = "<u>"
+        self.use_pad_symbol = use_pad_symbol
         self.pad_symbol = "*"
 
-        if use_pad_symbol:
+        if self.use_pad_symbol:
             self.push(self.pad_symbol)
 
-        if use_unknown:
+        if self.use_unknown:
             self.push(self.unknown_symbol)
 
-    def push(self, symbol):
+    def push(self, symbol, do_count=True):
         if self.is_locked == True:
             return
 
@@ -44,7 +46,8 @@ class Dictum(object):
             self.dictum[symbol] = len(self.dictum)
             self.inv_dictum[self.dictum[symbol]] = symbol
 
-        self.term[symbol] += 1
+        if do_count == True:
+            self.term[symbol] += 1
 
     def push_img(self, img):
         if self.is_locked == True:
@@ -221,6 +224,35 @@ class Dictum(object):
             return (max_len - len(sequence)) * [self.pad_symbol] + sequence
         else:
             sys.stderr.write("Error: Undefined mode in pad.")
+
+    def prune_vocab(self, min_count):
+        self.locked = False
+
+        new_term_dict = dict(
+            filter(lambda x: x[1] >= min_count, self.term.items()))
+        self.term = Counter(new_term_dict)
+
+        # update dictum_and inv_dictum
+        self.dictum = {}
+        self.inv_dictum = {}
+
+        if self.use_pad_symbol:
+            self.push(self.pad_symbol, do_count=False)
+
+        if self.use_unknown:
+            self.push(self.unknown_symbol, do_count=False)
+
+        map(lambda x: self.push(x[0], do_count=False), self.term.items())
+
+        # remove pruned words from idf_m
+        old_vocab = set(map(lambda x: x[0], self.idf_m.items()))
+        new_vocab = set(map(lambda x: x[0], self.term.items()))
+
+        for i in old_vocab - new_vocab:
+            self.term[self.unknown_symbol] += self.idf_m[0]
+            del (self.idf_m[i])
+
+        self.locking()
 
     @staticmethod
     def preprocess_matirx(M, do_zero_center=True, do_normalize=True):

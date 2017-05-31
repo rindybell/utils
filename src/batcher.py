@@ -4,8 +4,6 @@ Created on 2017/04/15
 @author: rindybell
 '''
 import numpy as np
-from Finder.Finder_items import item
-from boto.dynamodb.item import Item
 
 
 class Batcher(object):
@@ -32,6 +30,15 @@ class Batcher(object):
             self.current_position = 0
 
         return (is_end, batch_X)
+
+    def ranodm_gen(self):
+        if self.batch_size == -1:
+            return (True, self.X)
+
+        rand_indices = map(lambda _: np.random.randint(
+            o, len(self.X)), range(self.batch_size))
+        ret_tensor = np.array(map(lambda x: self.X[x], self.X))
+        return ret_tensor
 
     @staticmethod
     def simple_out(item):

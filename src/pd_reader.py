@@ -19,8 +19,9 @@ import pprint
 
 """ user-defined lib """
 
+
 class PdReader:
-    def __init__(self, filename, use_header=False, logger=logging):
+    def __init__(self, filename, use_header=False, logger=logging, delimiter=","):
         self.filename = filename
         self.logger = logging
 
@@ -28,10 +29,10 @@ class PdReader:
 
         if use_header == True:
             self.pd_item = pd.read_csv(
-                self.filename, delimiter="\t")
+                self.filename, delimiter=delimiter)
         else:
             self.pd_item = pd.read_csv(
-                self.filename, delimiter="\t", header=None)
+                self.filename, delimiter=delimiter, header=None)
 
     def segment(self, target_header, fun=lambda x: x.strip().split(" ")):
         self.pd_item[target_header] = self.pd_item[target_header].map(fun)
@@ -130,7 +131,7 @@ class PdReader:
 
     def get(self):
         return self.pd_item
-    
+
     @staticmethod
     def merge_vectorizer(dictum_vectorizers):
         # ベクタライザの合成

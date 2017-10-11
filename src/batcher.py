@@ -10,6 +10,7 @@ class Batcher(object):
 
     def __init__(self, X, batch_size=32):
         self.X = X
+        self.limit = X.shape[0]
         self.batch_size = batch_size
         self.current_position = 0
 
@@ -17,17 +18,15 @@ class Batcher(object):
         if self.batch_size == -1:
             return (True, self.X)
 
-        batch_X = np.array(
-            self.X[self.current_position: self.current_position + self.batch_size])
-
-        self.current_position += self.batch_size
-
-        x_size = batch_X.shape[0]
-
-        is_end = (x_size != self.batch_size)
+        next_position = min (self.current_position + self.batch_size, self.limit)
+        batch_X = self.X[self.current_position: next_position]
+        
+        is_end = (self.limit == next_position)
 
         if is_end == True:
             self.current_position = 0
+        else:
+            self.current_position = next_position
 
         return (is_end, batch_X)
 

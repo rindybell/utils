@@ -9,6 +9,7 @@ Created on 2017/04/15
 from collections import Counter
 import gensim
 import numpy as np
+import scipy.sparse as sp
 
 
 class Dictum(object):
@@ -101,6 +102,27 @@ class Dictum(object):
     def id_to_vec(self, _id):
         retvec = np.zeros(self.size())
         retvec[_id] = 1
+
+        return retvec
+
+    def lil_vec(self, symbol_list, is_binary=False):
+        retvec = sp.lil_matrix((1, self.size()))
+
+        if is_binary == True:
+            def update_fun(x): return x
+        else:
+            def update_fun(x): return x + 1
+
+        for _id in self.map_symbol_to_id(symbol_list):
+            retvec[0, _id] = update_fun(retvec[0, _id])
+
+        return retvec
+
+    def unit_lil_vec(self, symbol, is_binary=False):
+        retvec = sp.lil_matrix((1, self.size()))
+
+        _id = self.symbol_to_id(symbol)
+        retvec[0, _id] = 1
 
         return retvec
 
@@ -212,6 +234,12 @@ class Dictum(object):
             return gensim.matutils.unitvec(result_vec, norm="l2")
         else:
             return result_vec
+
+    def negative_sample(self, size, symbols=set()):
+        negative_samples = list(set(self.term) - symbols)
+        total_size = len(negative_samples)
+
+        return np.array(negative_samples)[np.random.permutation(total_size)[:size]]
 
     def size(self):
         return len(self.dictum)
